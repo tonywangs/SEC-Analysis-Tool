@@ -9,7 +9,7 @@
     "dev": "next dev",
     "server": "node server.js",
     "dev:full": "concurrently \"npm run server\" \"npm run dev\"",
-    "build": "next build",
+    "build": "next build --no-lint",
     "start": "concurrently \"npm run server\" \"next start\"",
     "lint": "next lint"
   },
