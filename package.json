@@ -2,6 +2,9 @@
   "name": "sec-analyzer",
   "private": true,
   "version": "0.1.0",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "dev": "next dev",
     "server": "node server.js",
