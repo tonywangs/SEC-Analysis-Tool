@@ -72,7 +72,8 @@ Note: Full document content is not available. This analysis is based on the docu
     console.log('Sending to Express server for analysis...')
 
     // Call our Express server for analysis
-    const response = await fetch('http://localhost:3001/analyze-document', {
+    const expressUrl = process.env.EXPRESS_URL || 'http://localhost:3001'
+    const response = await fetch(`${expressUrl}/analyze-document`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

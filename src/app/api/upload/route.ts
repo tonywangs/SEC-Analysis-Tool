@@ -49,7 +49,8 @@ export async function POST(request: NextRequest) {
         console.log('Sending PDF to Express server for processing...')
         
         // Call our Express server to process the PDF
-        const response = await fetch('http://localhost:3001/process-pdf', {
+        const expressUrl = process.env.EXPRESS_URL || 'http://localhost:3001'
+        const response = await fetch(`${expressUrl}/process-pdf`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
