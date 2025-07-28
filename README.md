@@ -1,6 +1,11 @@
 # SEC Analyzer - AI-Powered Document Reader
 
-An AI-powered web application that allows users to upload SEC filings (such as 10-Ks or 10-Qs) and ask natural-language questions about them. The system extracts and interprets information from these documents and returns answers with clear citations to the source text.
+A web application that allows users to upload SEC filings (such as 10-Ks or 10-Qs) and ask natural-language questions about them. The system extracts and interprets information from these documents and returns answers with clear citations to the source text.
+
+## Deployment
+
+This app is currently deployed on Heroku: [Link](https://sec-analyzer-b75a1b2841d4.herokuapp.com/) 
+Demo video: [Link](https://youtu.be/o0zxt_X5EsY)
 
 ## Features
 
@@ -35,7 +40,7 @@ Before you begin, ensure you have the following:
 ### 1. Clone and Install Dependencies
 
 ```bash
-git clone <your-repo-url>
+git clone <this-repo-url>
 cd sec-analyzer
 npm install
 ```
@@ -85,13 +90,92 @@ CREATE INDEX idx_documents_status ON documents(status);
 CREATE INDEX idx_documents_created_at ON documents(created_at DESC);
 CREATE INDEX idx_questions_document_id ON questions(document_id);
 CREATE INDEX idx_questions_created_at ON questions(created_at DESC);
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE questions ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Allow public read access to documents" ON documents;
+DROP POLICY IF EXISTS "Allow public insert access to documents" ON documents;
+DROP POLICY IF EXISTS "Allow public update access to documents" ON documents;
+DROP POLICY IF EXISTS "Allow public delete access to documents" ON documents;
+
+DROP POLICY IF EXISTS "Allow public read access to questions" ON questions;
+DROP POLICY IF EXISTS "Allow public insert access to questions" ON questions;
+DROP POLICY IF EXISTS "Allow public update access to questions" ON questions;
+DROP POLICY IF EXISTS "Allow public delete access to questions" ON questions;
+
+-- Create comprehensive policies for documents
+CREATE POLICY "Allow public read access to documents" ON documents
+  FOR SELECT USING (true);
+
+CREATE POLICY "Allow public insert access to documents" ON documents
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Allow public update access to documents" ON documents
+  FOR UPDATE USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow public delete access to documents" ON documents
+  FOR DELETE USING (true);
+
+-- Create comprehensive policies for questions
+CREATE POLICY "Allow public read access to questions" ON questions
+  FOR SELECT USING (true);
+
+CREATE POLICY "Allow public insert access to questions" ON questions
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Allow public update access to questions" ON questions
+  FOR UPDATE USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow public delete access to questions" ON questions
+  FOR DELETE USING (true);
+
+-- Create function to update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Create triggers to automatically update updated_at
+CREATE TRIGGER update_documents_updated_at 
+  BEFORE UPDATE ON documents 
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_questions_updated_at 
+  BEFORE UPDATE ON questions 
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Storage policies for the documents bucket
+-- Note: You'll need to create the bucket first in the Supabase dashboard
+-- Then run these policies
+
+-- Allow public read access to documents bucket
+CREATE POLICY "Allow public read access to documents bucket" ON storage.objects
+  FOR SELECT USING (bucket_id = 'documents');
+
+-- Allow public insert access to documents bucket
+CREATE POLICY "Allow public insert access to documents bucket" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'documents');
+
+-- Allow public update access to documents bucket
+CREATE POLICY "Allow public update access to documents bucket" ON storage.objects
+  FOR UPDATE USING (bucket_id = 'documents') WITH CHECK (bucket_id = 'documents');
+
+-- Allow public delete access to documents bucket
+CREATE POLICY "Allow public delete access to documents bucket" ON storage.objects
+  FOR DELETE USING (bucket_id = 'documents'); 
 ```
 
 3. **Set up Supabase Storage**:
    - Go to Storage in your Supabase dashboard
    - Create a new bucket called `documents`
    - Set the bucket to public (for this demo)
-   - Configure RLS policies if needed
+   - Adjust RLS policies if needed
 
 ### 3. Configure Environment Variables
 
@@ -118,49 +202,6 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
 
-## Deployment
-
-### Deploy to Vercel
-
-1. **Push your code to GitHub**
-
-2. **Connect to Vercel**:
-   - Go to [vercel.com](https://vercel.com)
-   - Import your GitHub repository
-   - Add your environment variables in the Vercel dashboard
-   - Deploy!
-
-### Deploy to Other Platforms
-
-The app can be deployed to any platform that supports Next.js:
-- Netlify
-- Railway
-- DigitalOcean App Platform
-- AWS Amplify
-
-## Project Structure
-
-```
-src/
-├── app/                    # Next.js App Router pages
-│   ├── api/               # API routes
-│   ├── analysis/          # Analysis page
-│   ├── upload/            # Upload page
-│   ├── globals.css        # Global styles
-│   ├── layout.tsx         # Root layout
-│   └── page.tsx           # Home page
-├── components/            # React components
-│   ├── analysis/          # Analysis-related components
-│   ├── dashboard/         # Dashboard components
-│   ├── layout/            # Layout components
-│   ├── upload/            # Upload components
-│   └── ui/                # shadcn/ui components
-└── lib/                   # Utility libraries
-    ├── api.ts             # API utilities
-    ├── ai.ts              # AI/LLM integration
-    └── supabase.ts        # Supabase client
-```
-
 ## API Endpoints
 
 - `GET /api/documents` - Get all documents
@@ -170,39 +211,20 @@ src/
 - `POST /api/upload` - Upload and process a file
 - `POST /api/analyze` - Analyze a document with AI
 
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License.
-
-## Support
-
-If you encounter any issues or have questions, please open an issue on GitHub.
-
-## Stretch Goals Implemented
+## Goals Implemented
 
 - [x] Clean, modern UI with attention to UX
+- [x] User authentication with Supabase
+- [x] PDF parsing and text extraction
 - [x] File upload with drag-and-drop support
 - [x] AI-powered question answering with citations
 - [x] Document library with metadata extraction
-- [x] Question history and tracking
+- [x] Question history and tracking (chat threading)
 - [x] Responsive design for mobile and desktop
 - [x] Loading states and error handling
 - [x] TypeScript for better type safety
 
 ## Future Enhancements
 
-- [ ] Dynamic SEC search integration
-- [ ] Multi-document comparison
-- [ ] Follow-up questions and chat threading
-- [ ] Document highlighting and navigation
-- [ ] External search enhancement
-- [ ] User authentication and document sharing
-- [ ] Advanced PDF parsing and text extraction
+- [ ] SEC external search integration
+- [ ] Multi-document comparison (redlining)
