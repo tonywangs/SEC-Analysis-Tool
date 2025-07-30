@@ -4,7 +4,7 @@ A web application that allows users to upload SEC filings (such as 10-Ks or 10-Q
 
 ## Deployment
 
-This app is currently deployed on Heroku: [Link](https://sec-analyzer-b75a1b2841d4.herokuapp.com/) 
+This app is currently deployed on Heroku: [Link](https://sec-analyzer-b75a1b2841d4.herokuapp.com/)  
 Demo video: [Link](https://youtu.be/o0zxt_X5EsY)
 
 ## Features
